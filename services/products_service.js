@@ -12,45 +12,66 @@ class ProductsService {
 
     }
 
-    getAllProducts() {
+    getAllProducts(onlyActive) {
         return new Observable(subscriber => {
-            ProductsModel.find({}).sort('-creationDate').exec((err, products) => {
+            let query_params = {};
+            if (onlyActive == 'true') query_params.active = true;
+            ProductsModel.find(query_params).sort('-creationDate').exec((err, products) => {
                 if (err) subscriber.error(err);
-                subscriber.next(products);
+                subscriber.next({status: 'success', message: 'Se obtuvieron los productos con exito.', products: products});
             });
         });
     }
 
-    getProductsByIdStore(id_store) {
+    getProductsByIdStore(id_store, onlyActive) {
         return new Observable(subscriber => {
-            ProductsModel.find({store_id: id_store}).sort('-creationDate').exec((err, products) => {
+            let query_params = {store_id: id_store};
+            if (onlyActive == 'true') query_params.active = true;
+            console.log(query_params);
+            ProductsModel.find(query_params).sort('-creationDate').exec((err, products) => {
                 if (err) subscriber.error(err);
-                subscriber.next(products);
+                subscriber.next({status: 'success', message: 'Se obtuvieron los productos con exito.', products: products});
             });
         });
     }
 
     getProductById(product_id) {
         return new Observable(subscriber => {
-            ProductsModel.find({_id: product_id}).exec((err, product) => {
+            ProductsModel.findOne({_id: product_id}).exec((err, product) => {
                 if (err) subscriber.error(err);
-                subscriber.next(product);
+                subscriber.next({status: 'success', message: 'Se obtuvo el producto con exito.', product: product});
             });
         });
     }
 
     activateProductById(product_id, active) {
         return new Observable(subscriber => {
-            ProductsModel.findOneAndUpdate(
-                { _id: product_id },
-                { active: active },
-                {new:true},
-                (err, product) => {
+            ProductsModel.findOne({_id: product_id}, (err, product) => {
+                if (err) subscriber.error(err);
+                StoresModel.findOne({_id: product.store_id}, (err, store) => {
                     if (err) subscriber.error(err);
-                    console.log(product);
-                    subscriber.next(product);
-                }
-            );
+                    if (!store.active) {
+                        ProductsModel.findOneAndUpdate({ _id: product_id }, { active: active }, {new:true}, (err, product) => {
+                            StoresModel.findOneAndUpdate({ _id: store._id }, { active: true }, (err, store) => {
+                                subscriber.next({status: 'success', message: 'Se activo el producto y la tienda ya que estaba desactivada.', product: product});
+                            });
+                        });
+                    } else {
+                        ProductsModel.findOneAndUpdate({ _id: product_id }, { active: active }, {new:true}, (err, product) => {
+                            if (err) subscriber.error(err);
+                            ProductsModel.countDocuments({store_id: store._id, active: true}, (err, productos_activos) => {
+                                if (productos_activos == 0) {
+                                    StoresModel.findOneAndUpdate({ _id: store._id }, { active: false }, (err, store) => {
+                                        subscriber.next({status: 'warning', message: 'Se ha desactivado la tienda por no tener ningun producto activo, vuelve a activar la tienda desde el menu anterior.', product: product});
+                                    });
+                                } else {
+                                    subscriber.next({status: 'success', message: 'Se activo con exito.', product: product});
+                                }
+                            });
+                        });
+                    }
+                });
+            });
         });
     }
 
@@ -58,7 +79,17 @@ class ProductsService {
         return new Observable(subscriber => {
             ProductsModel.deleteOne({ _id: product_id }, function (err, product) {
                 if (err) subscriber.error(err);
-                subscriber.next({status: 'success', message: 'Se elimino con exito.', product: product});
+                // revisamos si la tienda no se quedo sin productos, si ya no tiene mas entonces desactivamos la tienda y avisamos al cliente.
+                ProductsModel.countDocuments({store_id: product.store_id}, function (err, products_count) {
+                    if (err) subscriber.error(err);
+                    if (products_count == 0) {
+                        StoresModel.findOneAndUpdate({ _id: product.store_id }, { active: false }, function (err, store) {
+                            subscriber.next({status: 'warning', message: 'Se ha desactivado la tienda por falta de productos, agrega un producto para volver a activar la tienda.', product: product});
+                        });
+                    } else {
+                        subscriber.next({status: 'success', message: 'Se elimino con exito.', product: product});
+                    }
+                });
             });
         });
     }
@@ -77,24 +108,21 @@ class ProductsService {
                     product.creationDate = moment(product.creationDate);
                     operation_type = 'Update';
                 }
-                console.log(operation_type);
                 if (operation_type.toUpperCase() == 'SAVE') {
                     const newProduct = new ProductsModel(product);
                     newProduct.save((err, addedProduct) => {
                         if (err) subscriber.error(err);
-                        subscriber.next(addedProduct);
-                        console.log(addedProduct);
+                        subscriber.next({status: 'success', message: 'Se agrego el producto con exito.', product: addedProduct});
                     });
                 } else {
                     let product_id = product._id;
                     delete product._id;
-                    console.log(product);
                     ProductsModel.findOneAndUpdate(
                         { _id: product_id },
                         product,
                         (err, product) => {
                             if (err) subscriber.error(err);
-                            subscriber.next(product);
+                            subscriber.next({status: 'success', message: 'Se actualizo el producto con exito.', product: product});
                         }
                     );
                 }

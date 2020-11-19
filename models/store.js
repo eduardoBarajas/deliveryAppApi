@@ -10,6 +10,7 @@ const StoreSchema = new Schema({
     images: [String],
     logoImage: String,
     address: String,
+    storeOwnerId: mongoose.ObjectId,
     addressCoord: {latitude: Number, longitude: Number},
     email: String,
     phones: {local: String, cellphone: String},
