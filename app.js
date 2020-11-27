@@ -30,6 +30,6 @@ app.use((err, req, res, next) => {
     res.status(500);
     res.render('error', { error: err });
 });
-mongoose.connect('mongodb://localhost:27017/test', {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false});
+mongoose.connect('mongodb+srv://deliveryAppDBManager:@manager1029@cluster0.tzsxp.mongodb.net/DELIVERYAPPTEST?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false});
 
 module.exports = app;
