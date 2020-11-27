@@ -7,6 +7,8 @@ var cors = require('cors');
 
 const storesController = require('./api/stores');
 const productsController = require('./api/products');
+const favoritesController = require('./api/favorites');
+const ordersController = require('./api/orders');
 
 var app = express();
 
@@ -19,6 +21,9 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/stores', storesController);
 app.use('/products', productsController);
+app.use('/favorites', favoritesController);
+app.use('/orders', ordersController);
+
 // error handler
 app.use((err, req, res, next) => {
     console.log(err);
