@@ -1,4 +1,5 @@
 var express = require('express');
+const dotenv = require('dotenv');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
@@ -6,16 +7,24 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
+const webpush = require('web-push');
 
 const storesController = require('./api/stores');
 const productsController = require('./api/products');
 const favoritesController = require('./api/favorites');
 const ordersController = require('./api/orders');
 const authController = require('./api/auth');
+const notificationsController = require('./api/notifications');
 const { Session } = require('inspector');
 
 var app = express();
+
+dotenv.config();
+
+webpush.setVapidDetails(process.env.WEB_PUSH_CONTACT, process.env.PUBLIC_VAPID_KEY, process.env.PRIVATE_VAPID_KEY);
+
 const store = new MongoDBStore({uri: 'mongodb+srv://deliveryAppDBManager:@manager1029@cluster0.tzsxp.mongodb.net/DELIVERYAPPTEST?retryWrites=true&w=majority', collection: 'sessions'});
+
 store.on('error', (err) => {
     console.log(err);
 });
@@ -46,6 +55,7 @@ app.use('/products', productsController);
 app.use('/favorites', favoritesController);
 app.use('/orders', ordersController);
 app.use('/auth', authController);
+app.use('/notifications', notificationsController);
 
 // error handler
 app.use((err, req, res, next) => {
