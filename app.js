@@ -31,7 +31,7 @@ var mSession = {
 }
 
 if (app.get('env') === 'production') {
-    sess.cookie.secure = true // serve secure cookies
+    mSession.cookie.secure = true // serve secure cookies
 }
 
 app.use(session(mSession));
