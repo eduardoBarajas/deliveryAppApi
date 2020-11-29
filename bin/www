@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('deliveryappapi:server');
 var http = require('http');
+const webSocketServer = require('websocket').server;
 
 /**
  * Get port from environment and store in Express.
@@ -28,6 +29,43 @@ var server = http.createServer(app);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
+const wsServer = new webSocketServer({
+  httpServer: server
+});
+
+wsServer.on('request', request => {
+  request.accept(null, request.origin);
+});
+
+wsServer.on('connect', ws => {
+  ws.on('message', data => {
+    console.log(data);
+    if (data.type === 'utf8') {
+      try {
+        let request_json = JSON.parse(data.utf8Data);
+        let response = {type: request_json.type, data: undefined};
+        switch (request_json.type.toUpperCase()) {
+          case 'STORE_UPDATED': {
+            response.data = 'Se actualizo una tienda.';
+            break;
+          }
+          case 'PRODUCT_UPDATED': {
+            response.data = 'Se actualizo un producto.';
+            break;
+          }
+          case 'ORDER_UPDATED': {
+            response.data = 'Se actualizo una orden.';
+            break;
+          }
+        }
+        if (response.data != undefined) {
+          wsServer.broadcastUTF(JSON.stringify(response));
+        }
+      } catch(e) { console.log(e) }
+    }
+  });
+});
+
 
 /**
  * Normalize a port into a number, string, or false.
