@@ -18,7 +18,7 @@ class OrdersService {
         console.log({idUser: idUser, state: ORDER_STATES.CART});
 
         return new Observable(subscriber => {
-            OrdersModel.findOne({userId: idUser, state: ORDER_STATES.CART}, (err, cart) => {
+            OrdersModel.findOne({creatorUserId: idUser, state: ORDER_STATES.CART}, (err, cart) => {
                 if (err) subscriber.error(err);
                 console.log(cart);
                 if (cart != null) {
@@ -33,7 +33,7 @@ class OrdersService {
     getCartDataByIdUser(idUser) {
         return new Observable(subscriber => {
             let data = {status: 'warning', message: 'No se encontraron productos en el carrito.', products: [], idOrder: ''};
-            OrdersModel.findOne({userId: idUser, state: ORDER_STATES.CART}, (err, cart) => {
+            OrdersModel.findOne({creatorUserId: idUser, state: ORDER_STATES.CART}, (err, cart) => {
                 if (err) subscriber.error(err);
                 if (cart != null) {
                     cart.items.forEach((value, key, map) => {
@@ -108,6 +108,8 @@ class OrdersService {
                     operation_type = 'Update';
                 }
                 if (operation_type.toUpperCase() == 'SAVE') {
+                    if (order.consumerUserId == '')
+                        order.consumerUserId = order.creatorUserId;
                     const newOrder = new OrdersModel(order);
                     newOrder.deliveryUserId = mongoose.Types.ObjectId();
                     newOrder.save((err, addedOrder) => {
