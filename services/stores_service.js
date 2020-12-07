@@ -16,12 +16,17 @@ class StoreService {
 
     getStoresByIdStoreOwner(id_store_owner) {
         // aqui agregar el id del store owner en la consulta
+        console.log(id_store_owner);
         return new Observable(subscriber => {
-            StoresModel.find({}).sort('-creationDate').exec((err, stores) => {
+            StoresModel.find({storeOwnerId: id_store_owner}).sort('-creationDate').exec((err, stores) => {
                 if (err) subscriber.error(err);
-                subscriber.next(stores.filter((store => {
-                    return (!store.deleted);
-                })));
+                if (stores != null) {
+                    subscriber.next(stores.filter((store => {
+                        return (!store.deleted);
+                    })));
+                } else {
+                    subscriber.next([]);
+                }
             });
         });
     }
@@ -98,7 +103,6 @@ class StoreService {
                     store._id = mongoose.Types.ObjectId();
                     store.creationDate = moment(new Date());
                     store.deleted = false;
-                    store.storeOwnerId = '5fb07fcf1e433838c430416c'; // ESTO SOLO ES TEMPORAL EN LO QUE SE AGREGA UN LOGIN
                     operation_type = 'Save';
                 } else {
                     store.creationDate = moment(store.creationDate);

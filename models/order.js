@@ -8,8 +8,6 @@ const OrderSchema = new Schema({
     creatorUserId: mongoose.ObjectId,
     consumerUserId: mongoose.ObjectId,
     deliveryUserId: mongoose.ObjectId,
-    address: String,
-    addressCoord: {latitude: Number, longitude: Number},
     items: { type: Map, of: Number},
     stores: {type: Map, of: String},
     payId: String

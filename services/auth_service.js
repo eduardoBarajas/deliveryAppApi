@@ -36,6 +36,29 @@ class AuthService {
         });
     }
 
+    deleteUserById(idUser) {
+        return new Observable(subscriber => {
+            UserModel.deleteOne({ _id: idUser }, function (err, user) {
+                if (err) subscriber.error(err);
+                // revisamos si la tienda no se quedo sin productos, si ya no tiene mas entonces desactivamos la tienda y avisamos al cliente.
+                subscriber.next({status: 'success', message: 'Se elimino con exito.', user: user});
+            });
+        });
+    }
+
+    getCostumersByIdStoreOwner(idStoreOwner) {
+        return new Observable(subscriber => {
+            UserModel.find({creatorUserId: idStoreOwner}).sort('-creationDate').exec((err, users) => {
+                if (err) subscriber.error(err);
+                if (users != null) {
+                    subscriber.next({status: 'success', message: 'Se obtuvieron los usuario con exito.', users: users});
+                } else {
+                    subscriber.next({status: 'warning', message: 'No ha creado usuarios.'});
+                }
+            });
+        });
+    }
+
     saveUser(user) {
         console.log(user);
         return new Observable(subscriber => {
@@ -47,7 +70,7 @@ class AuthService {
                     user.creationDate = moment(new Date());
                     operation_type = 'Save';
                 } else {
-                    user.creationDate = moment(favorite.creationDate);
+                    user.creationDate = moment(user.creationDate);
                     operation_type = 'Update';
                 }
                 if (operation_type.toUpperCase() == 'SAVE') {
@@ -66,12 +89,12 @@ class AuthService {
                         {new:true},
                         (err, newUser) => {
                             if (err) subscriber.error(err);
-                            subscriber.next({status: 'success', message: `Se actualizaron los datos del usuario.`, user: newUser});
+                            subscriber.next({status: 'success', message: `Se actualizaron los datos con exito.`, user: newUser});
                         }
                     );
                 }
             } catch(e) {
-                subscriber.error(err);
+                subscriber.error(e);
             }
         });
     }

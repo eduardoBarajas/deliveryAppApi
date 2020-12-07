@@ -45,6 +45,24 @@ router.post('/login', function(req, res, next) {
     });
 });
 
+router.post('/getCostumersByIdStoreOwner', function(req, res, next) {
+    console.log(req.session);
+    let idStoreOwner = req.body.idStoreOwner;
+    AuthService.getCostumersByIdStoreOwner(idStoreOwner).subscribe({
+        next(response) { res.send(response); },
+        error(err) { console.error('ERROR: /getCostumersByIdStoreOwner/ : ' + err); res.status(500).send({ err : err}); }
+    });
+});
+
+router.post('/deleteUserById', function(req, res, next) {
+    console.log(req.session);
+    let idUser = req.body.idUser;
+    AuthService.deleteUserById(idUser).subscribe({
+        next(response) { res.send(response); },
+        error(err) { console.error('ERROR: /deleteUserById/ : ' + err); res.status(500).send({ err : err}); }
+    });
+});
+
 router.post('/saveUser', function(req, res, next) {
     let user = req.body.user;
     let registrationData = null;
