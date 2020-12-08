@@ -71,7 +71,18 @@ router.post('/updateCart/:idOrder/:idItem/:quantity/:updateType', function(req, 
 });
 
 router.post('/saveOrder', function(req, res, next) {
-    OrdersService.saveOrder(req.body.order).subscribe({
+    let items = req.body.items;
+    let stores = req.body.stores;
+    let order = req.body.order;
+    order.items = new Map();
+    order.stores = new Map();
+    Object.keys(items).forEach(key => {
+        order.items.set(key, items[key]);
+    });
+    Object.keys(stores).forEach(key => {
+        order.stores.set(key, stores[key]);
+    });
+    OrdersService.saveOrder(order).subscribe({
         next(response) { res.send(response); },
         error(err) { console.error('ERROR: /saveOrder : ' + err); res.status(500).send({ err : err}); }
     });

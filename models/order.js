@@ -7,8 +7,8 @@ const OrderSchema = new Schema({
     creationDate: Date,
     creatorUserId: mongoose.ObjectId,
     consumerUserId: mongoose.ObjectId,
-    deliveryUserId: mongoose.ObjectId,
-    items: { type: Map, of: Number},
+    deliveryUserId: {type: mongoose.ObjectId, required: false, default: null},
+    items: {type: Map, of: Number},
     stores: {type: Map, of: String},
     payId: String
 });

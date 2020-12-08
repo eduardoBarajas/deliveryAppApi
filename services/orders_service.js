@@ -101,17 +101,19 @@ class OrdersService {
                     // se agrega un id cualquiera en el usuario de delivery, cuando se
                     // cambie de estado la orden se debera reasignar.
                     order.creationDate = moment(new Date());
-                    order.state = ORDER_STATES.CART;
+                    if (order.state == '')
+                        order.state = ORDER_STATES.CART;
+                    if (order.consumerUserId == '')
+                        order.consumerUserId = order.creatorUserId;
+                    if (order.deliveryUserId == '')
+                        delete order.deliveryUserId;
                     operation_type = 'Save';
                 } else {
                     order.creationDate = moment(order.creationDate);
                     operation_type = 'Update';
                 }
                 if (operation_type.toUpperCase() == 'SAVE') {
-                    if (order.consumerUserId == '')
-                        order.consumerUserId = order.creatorUserId;
                     const newOrder = new OrdersModel(order);
-                    newOrder.deliveryUserId = mongoose.Types.ObjectId();
                     newOrder.save((err, addedOrder) => {
                         if (err) subscriber.error(err);
                         subscriber.next({status: 'success', message: 'Se agrego con exito.', order: newOrder});

@@ -14,6 +14,14 @@ router.post('/getUserById/:idUser', function(req, res, next) {
     });
 });
 
+router.post('/getAllUsersByRole', function(req, res, next) {
+    let role = req.body.user_role;
+    AuthService.getAllUsersByRole(role).subscribe({
+        next(response) { res.send(response); },
+        error(err) { console.error('ERROR: /getAllUsersByRole/ : ' + err); res.status(500).send({ err : err}); }
+    });
+});
+
 router.post('/login', function(req, res, next) {
     let email = req.body.email;
     let password = req.body.password;

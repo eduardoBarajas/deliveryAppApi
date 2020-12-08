@@ -36,6 +36,19 @@ class AuthService {
         });
     }
 
+    getAllUsersByRole(role) {
+        return new Observable(subscriber => {
+            UserModel.find({userRole: role}).sort('-creationDate').exec((err, users) => {
+                if (err) subscriber.error(err);
+                if (users != null) {
+                    subscriber.next({status: 'success', message: 'Se obtuvieron los usuarios de ese rol con exito.', users: users});
+                } else {
+                    subscriber.next({status: 'warning', message: 'No existen usuarios con ese rol.'});
+                }
+            });
+        });   
+    }
+
     deleteUserById(idUser) {
         return new Observable(subscriber => {
             UserModel.deleteOne({ _id: idUser }, function (err, user) {
@@ -68,6 +81,8 @@ class AuthService {
                     // si es nulo es por que es una nueva tienda.
                     user._id = mongoose.Types.ObjectId();
                     user.creationDate = moment(new Date());
+                    if (user.creatorUserId == '')
+                        delete user.creatorUserId;
                     operation_type = 'Save';
                 } else {
                     user.creationDate = moment(user.creationDate);
