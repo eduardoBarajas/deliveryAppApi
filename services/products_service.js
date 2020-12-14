@@ -44,6 +44,19 @@ class ProductsService {
         });
     }
 
+    getProductByListOfIds(products_ids) {
+        return new Observable(subscriber => {
+            ProductsModel.find({_id: { $in: products_ids }}).exec((err, products) => {
+                if (err) subscriber.error(err);
+                if (products != null) {
+                    subscriber.next({status: 'success', message: 'Se obtuvieron los productos con exito.', products: products});
+                } else {
+                    subscriber.next({status: 'warning', message: 'No se pudieron obtener los productos.'});
+                }
+            });
+        });
+    }
+
     activateProductById(product_id, active) {
         return new Observable(subscriber => {
             ProductsModel.findOne({_id: product_id}, (err, product) => {

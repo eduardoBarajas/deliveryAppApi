@@ -1,0 +1,3 @@
+module.exports = WEBSOCKET_EVENTS = {
+    ORDERS_UPDATED: 'ORDERS_UPDATED'
+}

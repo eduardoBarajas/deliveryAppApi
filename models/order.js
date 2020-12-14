@@ -5,11 +5,10 @@ const OrderSchema = new Schema({
     _id: mongoose.ObjectId,
     state: Number,
     creationDate: Date,
-    creatorUserId: mongoose.ObjectId,
-    consumerUserId: mongoose.ObjectId,
-    deliveryUserId: {type: mongoose.ObjectId, required: false, default: null},
+    storeId: {type: mongoose.ObjectId, required: false, default: null, ref: 'Stores'},
+    consumerUserId: {type: mongoose.ObjectId, ref: 'Users'},
+    deliveryUserId: {type: mongoose.ObjectId, required: false, default: null, ref: 'Users'},
     items: {type: Map, of: Number},
-    stores: {type: Map, of: String},
     payId: String
 });
 

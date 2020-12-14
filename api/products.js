@@ -19,12 +19,21 @@ router.get('/getProductsByIdStore/:store_id/:onlyActive', function(req, res, nex
     });
 });
 
-router.get('/getProductById/:product_id', function(req, res, next) {
-  let product_id = req.params.product_id;
-  ProductService.getProductById(product_id).subscribe({
+router.post('/getProductByListOfIds', function(req, res, next) {
+  let products_ids = req.body.products_ids;
+  console.log(products_ids)
+  ProductService.getProductByListOfIds(products_ids).subscribe({
       next(response) { res.send(response); },
-      error(err) { console.error('ERROR: /getProductById/:product_id : ' + err); res.status(500).send({ err : err}); }
+      error(err) { console.error('ERROR: /getProductByListOfIds : ' + err); res.status(500).send({ err : err}); }
   });
+});
+
+router.get('/getProductById/:product_id', function(req, res, next) {
+    let product_id = req.params.product_id;
+    ProductService.getProductById(product_id).subscribe({
+        next(response) { res.send(response); },
+        error(err) { console.error('ERROR: /getProductById/:product_id : ' + err); res.status(500).send({ err : err}); }
+    });
 });
 
 router.post('/saveProduct', (req, res) => {

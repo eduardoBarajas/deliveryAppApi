@@ -1,4 +1,5 @@
 const ORDER_STATES = require('../utils/order_states');
+const USER_ROLES = require('../utils/users_roles');
 const rxjs = require('rxjs');
 const { Observable } = rxjs;
 var mongoose = require('mongoose');
@@ -16,9 +17,8 @@ class OrdersService {
 
     getCartByIdUser(idUser) {
         console.log({idUser: idUser, state: ORDER_STATES.CART});
-
         return new Observable(subscriber => {
-            OrdersModel.findOne({creatorUserId: idUser, state: ORDER_STATES.CART}, (err, cart) => {
+            OrdersModel.findOne({consumerUserId: idUser, state: ORDER_STATES.CART}, (err, cart) => {
                 if (err) subscriber.error(err);
                 console.log(cart);
                 if (cart != null) {
@@ -32,27 +32,28 @@ class OrdersService {
 
     getCartDataByIdUser(idUser) {
         return new Observable(subscriber => {
-            let data = {status: 'warning', message: 'No se encontraron productos en el carrito.', products: [], idOrder: ''};
-            OrdersModel.findOne({creatorUserId: idUser, state: ORDER_STATES.CART}, (err, cart) => {
+            let data = {status: 'warning', message: 'No se encontraron productos en el carrito.', products: [], store: null, idOrder: ''};
+            OrdersModel.findOne({consumerUserId: idUser, state: ORDER_STATES.CART}, (err, cart) => {
                 if (err) subscriber.error(err);
                 if (cart != null) {
                     cart.items.forEach((value, key, map) => {
                         ProductsModel.findOne({_id: key}, (errProduct, product) => {
                             if (errProduct) subscriber.error(errProduct);
                             if (product != null) {
-                                StoresModel.findOne({_id: product.store_id}, (errStore, store) => {
-                                    if (errStore) subscriber.error(errStore);
-                                    if (store != null) {
-                                        data.products.push({product: product, store: store, quantity: value});
+                                data.products.push({product: product, quantity: value});
+                                // checamos que ya se haya obtenido el ultimo registro del arreglo.
+                                if (data.products.length == cart.items.size) {
+                                    if (data.products.length > 0) {
+                                        data = {...data, status: 'success', message: 'Se obtuvieron los productos con exito.', idOrder: cart._id};
                                     }
-                                    // checamos que ya se haya obtenido el ultimo registro del arreglo.
-                                    if (data.products.length == cart.items.size) {
-                                        if (data.products.length > 0) {
-                                            data = {...data, status: 'success', message: 'Se obtuvieron los productos con exito.', idOrder: cart._id};
+                                    StoresModel.findOne({_id: product.store_id}, (errStore, store) => {
+                                        if (errStore) subscriber.error(errStore);
+                                        if (store != null) {
+                                            data.store = store;
+                                            subscriber.next(data);
                                         }
-                                        subscriber.next(data);
-                                    }
-                                });
+                                    });
+                                }
                             }
                         });
                     });
@@ -76,6 +77,65 @@ class OrdersService {
         });
     }
 
+    getOrderWithDataById(idOrder) {
+        return new Observable(subscriber => {
+            OrdersModel.findOne({_id: idOrder}).populate('consumerUserId').populate('deliveryUserId').populate('storeId').exec((err, order) => {
+                if (err) subscriber.error(err);
+                if (order != null) {
+                    subscriber.next({status: 'success', message: 'Se obtuvo la orden con exito.', orderWithData: order});
+                } else {
+                    subscriber.next({status: 'warning', message: 'No se encontro la orden.'});
+                }
+            });
+        });
+    }
+
+    getOrdersByIdUserAndRole(idUser, role) {
+        return new Observable(subscriber => {
+            const execute = (params) => { 
+                OrdersModel.find(params).populate('consumerUserId').populate('deliveryUserId').populate('storeId').exec((err, orders) => {
+                    if (err) subscriber.error(err);
+                    if (orders != null) {
+                        console.log(orders);
+                        subscriber.next({status: 'success', message: 'Se obtuvieron las ordenes con exito.', ordersWithData: orders});
+                    } else {
+                        subscriber.next({status: 'warning', message: 'No se han hecho ordenes con esta cuenta.'});
+                    }
+                });
+            }
+            let query_params = {};
+            switch (role.toUpperCase()) {
+                case USER_ROLES.CLIENT_USER: {
+                    query_params.consumerUserId = idUser;
+                    query_params.state = { $gt: ORDER_STATES.CART};
+                    execute(query_params);
+                    break;
+                }
+                case USER_ROLES.STORE_OWNER: { 
+                    StoresModel.find({storeOwnerId: idUser}).exec((err, stores) => {
+                        if (err) subscriber.error(err);
+                        console.log(stores);
+                        let id_stores = [];
+                        stores.forEach((store) => {
+                            id_stores.push(store._id);
+                        });
+                        query_params.state = { $gt: ORDER_STATES.CART};
+                        query_params.storeId = { $in: id_stores };
+                        execute(query_params);
+                    });
+                    break; 
+                }
+                case USER_ROLES.DELIVERY_USER: { 
+                    query_params.deliveryUserId = { $in: [idUser, null] }; 
+                    query_params.state = { $gt: ORDER_STATES.SEND_TO_STORE};
+                    execute(query_params);
+                    break; 
+                }
+            }
+            
+        });
+    }
+
     updateCart(order) {
         console.log(order);
         return new Observable(subscriber => {
@@ -85,6 +145,25 @@ class OrdersService {
                     subscriber.next({status: 'success', message: 'Se actualizo el carrito con exito.', order: cart});
                 } else {
                     subscriber.next({status: 'warning', message: 'Ocurrio un problema al actualizar el carrito intenta mas tarde.'});
+                }
+            });
+        });
+    }
+
+    updateOrderState(order) {
+        console.log(order); 
+        let updated_data = {state: order.state + 100};
+        if (order.deliveryUserId != null && order.deliveryUserId.length > 0)
+            updated_data.deliveryUserId = order.deliveryUserId;
+        console.log(updated_data);
+        return new Observable(subscriber => {
+            OrdersModel.findOneAndUpdate({ _id: order._id }, updated_data, {new: true}, function (err, order) {
+                if (err) subscriber.error(err);
+                console.log(order);
+                if (order != null) {
+                    subscriber.next({status: 'success', message: 'Se actualizo la orden con exito.', order: order});
+                } else {
+                    subscriber.next({status: 'warning', message: 'Ocurrio un problema al actualizar la orden intenta mas tarde.'});
                 }
             });
         });
@@ -103,10 +182,10 @@ class OrdersService {
                     order.creationDate = moment(new Date());
                     if (order.state == '')
                         order.state = ORDER_STATES.CART;
-                    if (order.consumerUserId == '')
-                        order.consumerUserId = order.creatorUserId;
                     if (order.deliveryUserId == '')
                         delete order.deliveryUserId;
+                    if (order.storeId == '')
+                        delete order.storeId;
                     operation_type = 'Save';
                 } else {
                     order.creationDate = moment(order.creationDate);

@@ -23,6 +23,19 @@ class AuthService {
         });
     }
 
+    checkIfEmailExists(email) {
+        return new Observable(subscriber => {
+            UserModel.findOne({email: email}).sort('-creationDate').exec((err, user) => {
+                if (err) subscriber.error(err);
+                if (user != null) {
+                    subscriber.next({status: 'success', message: 'Ya existe un usuario con ese correo en el sistema.', user: {email: user.email}});
+                } else {
+                    subscriber.next({status: 'warning', message: 'No existe un usuario con ese correo en el sistema.'});
+                }
+            });
+        });
+    }
+
     getUserById(idUser) {
         return new Observable(subscriber => {
             UserModel.findOne({_id: idUser}).sort('-creationDate').exec((err, user) => {

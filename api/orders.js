@@ -35,7 +35,7 @@ router.post('/updateCart/:idOrder/:idItem/:quantity/:updateType', function(req, 
     let idItem = req.params.idItem;
     let quantity = parseInt(req.params.quantity);
     let updateType= req.params.updateType;
-    const update_cart =  { next(responseOrder) { res.send(responseOrder); }, error(err) { console.error('ERROR: /addItemToCart/ : updateCart : ' + err); res.status(500).send({ err : err}); }};
+    const update_cart =  { next(responseOrder) { res.send(responseOrder); }, error(err) { console.error('ERROR: //updateCart/:idOrder/:idItem/:quantity/:updateType/ : updateCart : ' + err); res.status(500).send({ err : err}); }};
     OrdersService.getCartById(idOrder).subscribe({
         next(response_cart) { 
             if (response_cart.status == 'success') {
@@ -53,34 +53,55 @@ router.post('/updateCart/:idOrder/:idItem/:quantity/:updateType', function(req, 
                         break;
                     }
                 }            
-                if (response_cart.order.items.get(idItem) != null && response_cart.order.stores.get(idItem) == undefined) {
+                if (response_cart.order.storeId == null || response_cart.order.storeId == '') {
                     ProductsService.getProductById(idItem).subscribe({
                         next(response_item) { 
                             if (response_item.status == 'success') {
-                                response_cart.order.stores.set(idItem, response_item.product.store_id);
+                                response_cart.order.storeId = response_item.product.store_id;
                                 OrdersService.updateCart(response_cart.order).subscribe(update_cart);
                             }
                         }, error(err) { console.error('ERROR: /addItemToCart/ : getProductById : ' + err); res.status(500).send({ err : err}); }
                     });
                 } else {
+                    if (response_cart.order.items.size == 0) response_cart.order.storeId = null;
                     OrdersService.updateCart(response_cart.order).subscribe(update_cart);
                 }
             }
-        }, error(err) { console.error('ERROR: /addItemToCart/ : getCartById : ' + err); res.status(500).send({ err : err}); }
+        }, error(err) { console.error('ERROR: //updateCart/:idOrder/:idItem/:quantity/:updateType/ : getCartById : ' + err); res.status(500).send({ err : err}); }
+    });
+});
+
+router.post('/getOrderWithDataById', function(req, res, next) {
+    let idOrder = req.body.idOrder;
+    OrdersService.getOrderWithDataById(idOrder).subscribe({
+        next(response) { res.send(response); },
+        error(err) { console.error('ERROR: /getOrderWithDataById : ' + err); res.status(500).send({ err : err}); }
+    });
+});
+
+router.post('/getOrdersByIdUserAndRole', function(req, res, next) {
+    let idUser = req.body.idUser;
+    let role = req.body.role;
+    OrdersService.getOrdersByIdUserAndRole(idUser, role).subscribe({
+        next(response) { res.send(response); },
+        error(err) { console.error('ERROR: /getOrdersByIdUserAndRole : ' + err); res.status(500).send({ err : err}); }
+    });
+});
+
+router.post('/updateOrderState', function(req, res, next) {
+    let order = req.body.order;
+    OrdersService.updateOrderState(order).subscribe({
+        next(response) { res.send(response); },
+        error(err) { console.error('ERROR: /updateOrderState : ' + err); res.status(500).send({ err : err}); }
     });
 });
 
 router.post('/saveOrder', function(req, res, next) {
     let items = req.body.items;
-    let stores = req.body.stores;
     let order = req.body.order;
     order.items = new Map();
-    order.stores = new Map();
     Object.keys(items).forEach(key => {
         order.items.set(key, items[key]);
-    });
-    Object.keys(stores).forEach(key => {
-        order.stores.set(key, stores[key]);
     });
     OrdersService.saveOrder(order).subscribe({
         next(response) { res.send(response); },

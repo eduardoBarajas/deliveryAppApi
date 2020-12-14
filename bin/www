@@ -7,7 +7,9 @@
 var app = require('../app');
 var debug = require('debug')('deliveryappapi:server');
 var http = require('http');
+const WEBSOCKET_EVENTS = require('../utils/webSocketsEvents');
 const webSocketServer = require('websocket').server;
+const { request } = require('../app');
 
 /**
  * Get port from environment and store in Express.
@@ -43,23 +45,15 @@ wsServer.on('connect', ws => {
     if (data.type === 'utf8') {
       try {
         let request_json = JSON.parse(data.utf8Data);
-        let response = {type: request_json.type, data: undefined};
-        switch (request_json.type.toUpperCase()) {
-          case 'STORE_UPDATED': {
-            response.data = 'Se actualizo una tienda.';
-            break;
-          }
-          case 'PRODUCT_UPDATED': {
-            response.data = 'Se actualizo un producto.';
-            break;
-          }
-          case 'ORDER_UPDATED': {
-            response.data = 'Se actualizo una orden.';
+        let is_valid = false;
+        switch (request_json.event_type.toUpperCase()) {
+          case WEBSOCKET_EVENTS.ORDERS_UPDATED: {
+            is_valid = true;
             break;
           }
         }
-        if (response.data != undefined) {
-          wsServer.broadcastUTF(JSON.stringify(response));
+        if (is_valid) {
+          wsServer.broadcastUTF(data.utf8Data);
         }
       } catch(e) { console.log(e) }
     }
