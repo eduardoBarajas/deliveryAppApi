@@ -16,7 +16,8 @@ router.post('/sendPush', function(req, res, next) {
                 usersIds = users;
             console.log(message_push);
             var message = { 
-                app_id: process.env.ONE_SIGNAL_APP_ID_LOCAL,
+                //app_id: process.env.ONE_SIGNAL_APP_ID_LOCAL,
+                app_id: process.env.ONE_SIGNAL_APP_ID_PROD,
                 contents: {'en': message_push.content},
                 include_external_user_ids: usersIds
             };
@@ -24,7 +25,8 @@ router.post('/sendPush', function(req, res, next) {
             // ["All"]
             var headers = {
                 "Content-Type": "application/json; charset=utf-8",
-                "Authorization": "Basic " + process.env.ONE_SIGNAL_APP_API_KEY_LOCAL
+                //"Authorization": "Basic " + process.env.ONE_SIGNAL_APP_API_KEY_LOCAL
+                "Authorization": "Basic " + process.env.ONE_SIGNAL_APP_API_KEY_PROD
             };
             console.log(headers);
             var options = {
