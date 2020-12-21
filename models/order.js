@@ -9,6 +9,7 @@ const OrderSchema = new Schema({
     consumerUserId: {type: mongoose.ObjectId, ref: 'Users'},
     deliveryUserId: {type: mongoose.ObjectId, required: false, default: null, ref: 'Users'},
     items: {type: Map, of: Number},
+    deliverInstructions: {type: String, required: false, default: null},
     payId: String
 });
 

@@ -50,7 +50,11 @@ wsServer.on('connect', ws => {
           case WEBSOCKET_EVENTS.ORDERS_UPDATED: {
             is_valid = true;
             break;
-          }
+		  }
+		  case WEBSOCKET_EVENTS.ORDER_STATE_UPDATED: {
+			  is_valid = true;
+			  break;
+		  }
         }
         if (is_valid) {
           wsServer.broadcastUTF(data.utf8Data);
