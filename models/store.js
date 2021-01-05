@@ -10,12 +10,16 @@ const StoreSchema = new Schema({
     images: [String],
     logoImage: String,
     address: String,
+    operationSchedule: [{day: String, start: String, end: String}],
     storeOwnerId: mongoose.ObjectId,
     addressCoord: {latitude: Number, longitude: Number},
     email: String,
     phones: {local: String, cellphone: String},
     storeType: String, 
     verified: Boolean,
+    deliverFeePerKM: Number,
+    orderTypesAvailable: [String],
+    orderPayTypesAvailable: [String],
     deleted: Boolean
 });
 

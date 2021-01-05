@@ -50,21 +50,29 @@ router.post('/updateCart/:idOrder/:idItem/:quantity/:updateType', function(req, 
                     }
                     case 'DELETE': {
                         if (response_cart.order.items.get(idItem) != null) response_cart.order.items.delete(idItem);
+                        if (response_cart.order.items.size == 0) response_cart.order.storeId = null;
+                        OrdersService.updateCart(response_cart.order).subscribe(update_cart);
                         break;
                     }
-                }            
-                if (response_cart.order.storeId == null || response_cart.order.storeId == '') {
+                }       
+                if (updateType.toUpperCase() != 'DELETE') {
                     ProductsService.getProductById(idItem).subscribe({
                         next(response_item) { 
                             if (response_item.status == 'success') {
-                                response_cart.order.storeId = response_item.product.store_id;
-                                OrdersService.updateCart(response_cart.order).subscribe(update_cart);
+                                if (response_cart.order.storeId == null || response_cart.order.storeId == '') {
+                                    response_cart.order.storeId = response_item.product.store_id;
+                                    OrdersService.updateCart(response_cart.order).subscribe(update_cart);
+                                } else {
+                                    if (response_cart.order.storeId.equals(response_item.product.store_id)) {
+                                        OrdersService.updateCart(response_cart.order).subscribe(update_cart);
+                                    } else {
+                                        // si no son del mismo local entonces regresamos un warning.
+                                        res.send({status: 'warning', message: 'No puedes agregar productos de dos locales distintos al pedido, completa o elimina el pedido actual.'});
+                                    }
+                                }
                             }
                         }, error(err) { console.error('ERROR: /addItemToCart/ : getProductById : ' + err); res.status(500).send({ err : err}); }
-                    });
-                } else {
-                    if (response_cart.order.items.size == 0) response_cart.order.storeId = null;
-                    OrdersService.updateCart(response_cart.order).subscribe(update_cart);
+                    });   
                 }
             }
         }, error(err) { console.error('ERROR: //updateCart/:idOrder/:idItem/:quantity/:updateType/ : getCartById : ' + err); res.status(500).send({ err : err}); }
