@@ -9,7 +9,10 @@ const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 const jwt = require('express-jwt');
 
+const EntityCategoryModel = require('./models/entityCategory');
+
 const storesController = require('./api/stores');
+const reviewsController = require('./api/reviews');
 const productsController = require('./api/products');
 const favoritesController = require('./api/favorites');
 const ordersController = require('./api/orders');
@@ -45,6 +48,7 @@ app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.set('view engine', 'ejs');
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/stores', storesController);
@@ -53,6 +57,7 @@ app.use('/favorites', favoritesController);
 app.use('/orders', ordersController);
 app.use('/auth', authController);
 app.use('/notifications', notificationsController);
+app.use('/reviews', reviewsController);
 app.use('/', jwt({ 
     secret: process.env.JWT_SECRET, 
     algorithms: ['RS256'],
@@ -65,7 +70,7 @@ app.use('/', jwt({
       }
       return null;
     }
-}).unless({path: ['/auth/login', '/auth/saveUser']}));
+}).unless({path: ['/auth/login', '/auth/saveUser', '/auth/verificarCuenta/:email/:code']}));
 
 // error handler
 app.use((err, req, res, next) => {
@@ -79,6 +84,29 @@ app.use((err, req, res, next) => {
     //res.render('error', { error: err });
 });
 
-mongoose.connect('mongodb+srv://deliveryAppDBManager:@manager1029@cluster0.tzsxp.mongodb.net/DELIVERYAPPTEST?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false});
+mongoose.connect('mongodb+srv://deliveryAppDBManager:@manager1029@cluster0.tzsxp.mongodb.net/DELIVERYAPPTEST?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false}, (err) => {
+    if (err) console.log(err);
+    EntityCategoryModel.countDocuments((err, count) => {
+        if (err) console.log(err);
+        if (count == 0) {
+            ['Aperitivos‎', 'Desayunos‎', 'Postres', 'Ensaladas', 'Comida rápida',
+            'Carnes', 'Pastas'].forEach((category) => {
+                let nCategory = new EntityCategoryModel();
+                nCategory._id = mongoose.Types.ObjectId();
+                nCategory.description = category;
+                nCategory.entityType = 'product';
+                nCategory.save();
+            });
+            ['Comida Coreana', 'Comida Española‎', 'Comida Indonesa', 'Comida Japonesa', 
+            'Comida Mexicana', 'Comida Peruana', 'Comida Venezolana', 'Comida Colombiana'].forEach((category) => {
+                let nCategory = new EntityCategoryModel();
+                nCategory._id = mongoose.Types.ObjectId();
+                nCategory.description = category;
+                nCategory.entityType = 'store';
+                nCategory.save();
+            });
+        }
+    });
+});
 
 module.exports = app;

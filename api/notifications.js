@@ -7,17 +7,14 @@ const NotificationsService = require('../services/notifications_service');
 
 router.post('/sendPush', function(req, res, next) {
     console.log(req.body);
-    const users = req.body.users;
     const message_push = req.body.message;
-    const notification_type = req.body.notificationType;
-    NotificationsService.getUsersIds(notification_type).subscribe({
+    const params = {type: req.body.notificationType, users: req.body.users};
+    NotificationsService.getUsersIds(params).subscribe({
         next(usersIds) {
-            if (notification_type == PUSH_NOTIFICATIONS_TYPES.SEND_ONLY_TO_USERS_LIST) 
-                usersIds = users;
-            console.log(message_push);
+            if (params.type == PUSH_NOTIFICATIONS_TYPES.SEND_ONLY_TO_USERS_LIST) 
+                usersIds = params.users;
             var message = { 
-                //app_id: process.env.ONE_SIGNAL_APP_ID_LOCAL,
-                app_id: process.env.ONE_SIGNAL_APP_ID_PROD,
+                app_id: process.env.ONE_SIGNAL_APP_ID,
                 contents: {'en': message_push.content},
                 include_external_user_ids: usersIds
             };
@@ -25,8 +22,7 @@ router.post('/sendPush', function(req, res, next) {
             // ["All"]
             var headers = {
                 "Content-Type": "application/json; charset=utf-8",
-                //"Authorization": "Basic " + process.env.ONE_SIGNAL_APP_API_KEY_LOCAL
-                "Authorization": "Basic " + process.env.ONE_SIGNAL_APP_API_KEY_PROD
+                "Authorization": "Basic " + process.env.ONE_SIGNAL_APP_API_KEY
             };
             console.log(headers);
             var options = {

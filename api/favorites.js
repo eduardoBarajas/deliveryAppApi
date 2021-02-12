@@ -1,14 +1,20 @@
 var express = require('express');
 var router = express.Router();
+const ObjectId = require('mongoose').Types.ObjectId;
 const FavoritesService = require('../services/favorites_service');
 
 router.get('/getAllFavoritesByIdUserAndType/:idUser/:type', function(req, res, next) {
     let id_user = req.params.idUser;
     let type_favorite = req.params.type;
-    FavoritesService.getAllFavoritesByIdUserAndType(id_user, type_favorite).subscribe({
-        next(response) { res.send(response); },
-        error(err) { console.error('ERROR: /getAllFavoritesByIdUserAndType/ : ' + err); res.status(500).send({ err : err}); }
-    });
+    // validamos que el usuario sea valido.
+    if (ObjectId.isValid(id_user)) {
+        FavoritesService.getAllFavoritesByIdUserAndType(id_user, type_favorite).subscribe({
+            next(response) { res.send(response); },
+            error(err) { console.error('ERROR: /getAllFavoritesByIdUserAndType/ : ' + err); res.status(500).send({ err : err}); }
+        });
+    } else {
+        res.send({status: 'warning', message: 'Usuario Invalido', favorites: []});
+    }
 });
 
 router.get('/getFavoriteByIdUserAndIdElement/:idUser/:idElement', function(req, res, next) {

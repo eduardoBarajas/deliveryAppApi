@@ -1,6 +1,22 @@
 var express = require('express');
 var router = express.Router();
 const StoreService = require('../services/stores_service');
+const EntityCategoryModel = require('../models/entityCategory');
+
+router.post('/getStoreCategories', function(req, res, next) {
+    EntityCategoryModel.find({entityType: 'store'}, (err, categories) => {
+        if (err) {
+            console.error('ERROR: /getStoreCategories/ : ' + err); 
+            res.status(500).send({ err : err});
+        }
+        console.log(categories);
+        if (categories.length > 0) {
+            res.send({status: 'success', message: 'Se obtuvieron las categorias con exito.', categories: categories});
+        } else {
+            res.send({status: 'warning', message: 'No hay categorias agregadas.', categories: []});
+        }
+    });
+});
 
 router.get('/getAllStores/:onlyActive', (req, res) => {
   let onlyActive = req.params.onlyActive;
@@ -8,9 +24,9 @@ router.get('/getAllStores/:onlyActive', (req, res) => {
     next(stores) { 
       let response = {status: '', message: '', stores: []};
       if (stores.length > 0) {
-        response = {status: 'success', message: 'Se obtuvieron las tiendas con exito.', stores: stores};
+        response = {status: 'success', message: 'Se obtuvieron los locales con exito.', stores: stores};
       } else {
-        response = {status: 'warning', message: 'No se encontraron tiendas que mostrar.'};
+        response = {status: 'warning', message: 'No se encontraron locales que mostrar.'};
       }
       res.status(200).send(response);
     },
@@ -24,9 +40,9 @@ router.get('/getStoresByIdStoreOwner/:storeOwnerId', function(req, res, next) {
     next(stores) {
       let response = {status: '', message: '', stores: []};
       if (stores.length > 0) {
-        response = {status: 'success', message: 'Se obtuvieron las tiendas con exito.', stores: stores};
+        response = {status: 'success', message: 'Se obtuvieron los locales con exito.', stores: stores};
       } else {
-        response = {status: 'warning', message: 'No se encontraron tiendas que mostrar.'};
+        response = {status: 'warning', message: 'No se encontraron locales que mostrar.'};
       }
       res.status(200).send(response);
     },

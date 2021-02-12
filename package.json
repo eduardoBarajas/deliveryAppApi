@@ -12,13 +12,17 @@
     "cors": "^2.8.5",
     "debug": "~2.6.9",
     "dotenv": "^8.2.0",
+    "ejs": "^3.1.6",
     "express": "~4.16.1",
     "express-jwt": "^6.0.0",
     "express-session": "^1.17.1",
     "jsonwebtoken": "^8.5.1",
+    "mercadopago": "^1.5.3",
     "moment": "^2.29.1",
     "mongoose": "^5.10.9",
+    "mongoose-sequence": "^5.3.1",
     "morgan": "~1.9.1",
+    "nodemailer": "^6.4.17",
     "rxjs": "^6.6.3",
     "websocket": "^1.0.32"
   }

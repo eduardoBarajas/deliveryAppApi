@@ -46,10 +46,10 @@ class StoreService {
 
     getStoreById(store_id) {
         return new Observable(subscriber => {
-            StoresModel.findOne({_id: store_id}).exec((err, store) => {
+            StoresModel.findOne({_id: store_id}).populate('categories').populate('reviews').exec((err, store) => {
                 if (err) subscriber.error(err);
                 console.log(store);
-                subscriber.next({status: 'success', message: 'Se ha obtenido la tienda con exito.', store: store});
+                subscriber.next({status: 'success', message: 'Se ha obtenido el local con exito.', store: store});
             });
         });
     }
@@ -63,19 +63,19 @@ class StoreService {
                         if (store.active == false) {
                             ProductsModel.updateMany({store_id: store_id, active: true}, {active: false}, (err, products) => {
                                 if (err) subscriber.error(err);
-                                subscriber.next({status: 'warning', message: 'La tienda y todos sus productos han sido desactivados.', store: store});
+                                subscriber.next({status: 'warning', message: 'El local y todos sus productos han sido desactivados.', store: store});
                             });
                         } else {
                             ProductsModel.countDocuments({store_id: store_id}, (err, products_count) => {
                                 ProductsModel.updateMany({store_id: store_id, active: false}, {active: true}, (err, products) => {
                                     if (err) subscriber.error(err);
-                                    subscriber.next({status: 'success', message: 'La tienda y todos sus productos han sido activados.', store: store});
+                                    subscriber.next({status: 'success', message: 'El local y todos sus productos han sido activados.', store: store});
                                 });
                             });
                         }
                     });
                 } else {
-                    subscriber.next({status: 'warning', message: 'La tienda debe tener al menos un producto para ser activada.'});
+                    subscriber.next({status: 'warning', message: 'El local debe tener al menos un producto para ser activada.'});
                 }
             });
         });
@@ -83,7 +83,7 @@ class StoreService {
 
     deleteStoreById(store_id) {
         return new Observable(subscriber => {
-            // desactivamos todos los productos de la tienda.
+            // desactivamos todos los productos del local.
             ProductsModel.updateMany({store_id: store_id, active: true}, {active: false}, (err, products) => {
                 if (err) subscriber.error(err);
                 StoresModel.findOneAndUpdate({ _id: store_id }, {deleted: true}, {new:true}, function (err, store) {
@@ -99,7 +99,7 @@ class StoreService {
             try {
                 let operation_type = '';
                 if (store._id == '') {
-                    // si es nulo es por que es una nueva tienda.
+                    // si es nulo es por que es un nuevo local.
                     store._id = mongoose.Types.ObjectId();
                     store.creationDate = moment(new Date());
                     store.deleted = false;
@@ -109,10 +109,18 @@ class StoreService {
                     operation_type = 'Update';
                 }
                 if (operation_type.toUpperCase() == 'SAVE') {
-                    const newStore = new StoresModel(store);
-                    newStore.save((err, addedStore) => {
+                    StoresModel.countDocuments({storeOwnerId: store.storeOwnerId, deleted: false}, (err, store_owner_stores_count) => {
                         if (err) subscriber.error(err);
-                        subscriber.next({status: 'success', message: 'Se agrego la tienda con exito.', store: addedStore});
+                        // validamos que el usuario tenga como maximo 4 locales.
+                        if (store_owner_stores_count <= 3) {
+                            const newStore = new StoresModel(store);
+                            newStore.save((err, addedStore) => {
+                                if (err) subscriber.error(err);
+                                subscriber.next({status: 'success', message: 'Se agrego el local con exito.', store: addedStore});
+                            });
+                        } else {
+                            subscriber.next({status: 'warning', message: 'Solo se permiten maximo 4 locales por usuario, elimina uno si quieres agregar otro.', store: store});
+                        }
                     });
                 } else {
                     let store_id = store._id;
@@ -122,7 +130,7 @@ class StoreService {
                         store,
                         (err, store) => {
                             if (err) subscriber.error(err);
-                            subscriber.next({status: 'success', message: 'Se actualizo la tienda con exito.', store: store});
+                            subscriber.next({status: 'success', message: 'Se actualizo el local con exito.', store: store});
                         }
                     );
                 }

@@ -15,11 +15,14 @@ const StoreSchema = new Schema({
     addressCoord: {latitude: Number, longitude: Number},
     email: String,
     phones: {local: String, cellphone: String},
-    storeType: String, 
+    reviews: [{ type: Schema.Types.ObjectId, ref: 'Reviews' }],
+    categories: [{ type: Schema.Types.ObjectId, ref: 'EntityCategory' }],
     verified: Boolean,
     deliverFeePerKM: Number,
+    deliverMaxDistanceInKM: Number,
     orderTypesAvailable: [String],
-    orderPayTypesAvailable: [String],
+    payMethodsAvailable: [String],
+    minimumConsumeOrder: {type: Number, default: 0},
     deleted: Boolean
 });
 

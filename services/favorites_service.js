@@ -52,7 +52,7 @@ class FavoritesService {
             try {
                 let operation_type = '';
                 if (favorite._id == '') {
-                    // si es nulo es por que es una nueva tienda.
+                    // si es nulo es por que es una nuevo registro de favorito.
                     favorite._id = mongoose.Types.ObjectId();
                     favorite.creationDate = moment(new Date());
                     operation_type = 'Save';

@@ -13,9 +13,9 @@ class NotificationsService {
 
     }
 
-    getUsersIds(type) {
+    getUsersIds(params) {
         return new Observable(subscriber => {
-            switch (type) {
+            switch (params.type) {
                 case PUSH_NOTIFICATIONS_TYPES.SEND_TO_ALL_DELIVERY_USERS: {
                     UserModel.find({userRole: USER_ROLES.DELIVERY_USER, isSubscribedToPushNotifications: true}, '_id').sort('-creationDate').exec((err, users) => {
                         if (err) subscriber.error(err);
@@ -44,6 +44,19 @@ class NotificationsService {
                 }
                 case PUSH_NOTIFICATIONS_TYPES.SEND_ONLY_TO_USERS_LIST: {
                     subscriber.next([]);
+                    break;
+                }
+                case PUSH_NOTIFICATIONS_TYPES.SEND_TO_ALL_DELIVERY_USERS_BY_STORE_OWNER: {
+                    UserModel.find({isSubscribedToPushNotifications: true, userRole: USER_ROLES.DELIVERY_USER, creatorUserId: params.users[0]}, '_id').sort('-creationDate').exec((err, users) => {
+                        if (err) subscriber.error(err);
+                        if (users != null) {
+                            subscriber.next(users.map((user) => {
+                                return user._id;
+                            }));
+                        } else {
+                            subscriber.next([]);
+                        }
+                    });
                     break;
                 }
             }

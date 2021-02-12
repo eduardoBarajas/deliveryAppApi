@@ -14,7 +14,29 @@ class ProductsService {
 
     getAllProducts(onlyActive) {
         return new Observable(subscriber => {
-            let query_params = {};
+            let query_params = {deleted: false, isAditional: false};
+            if (onlyActive == 'true') query_params.active = true;
+            ProductsModel.find(query_params).sort('-creationDate').exec((err, products) => {
+                if (err) subscriber.error(err);
+                subscriber.next({status: 'success', message: 'Se obtuvieron los productos con exito.', products: products});
+            });
+        });
+    }
+
+    getAditionalProductsByIdStore(id_store, onlyActive) {
+        return new Observable(subscriber => {
+            let query_params = {store_id: id_store, deleted: false, isAditional: true};
+            if (onlyActive == 'true') query_params.active = true;
+            ProductsModel.find(query_params).sort('-creationDate').exec((err, products) => {
+                if (err) subscriber.error(err);
+                subscriber.next({status: 'success', message: 'Se obtuvieron los productos con exito.', products: products});
+            });
+        });
+    }
+
+    getAllProductsByIdStore(id_store, onlyActive) {
+        return new Observable(subscriber => {
+            let query_params = {store_id: id_store, deleted: false};
             if (onlyActive == 'true') query_params.active = true;
             ProductsModel.find(query_params).sort('-creationDate').exec((err, products) => {
                 if (err) subscriber.error(err);
@@ -25,9 +47,8 @@ class ProductsService {
 
     getProductsByIdStore(id_store, onlyActive) {
         return new Observable(subscriber => {
-            let query_params = {store_id: id_store};
+            let query_params = {store_id: id_store, deleted: false, isAditional: false};
             if (onlyActive == 'true') query_params.active = true;
-            console.log(query_params);
             ProductsModel.find(query_params).sort('-creationDate').exec((err, products) => {
                 if (err) subscriber.error(err);
                 subscriber.next({status: 'success', message: 'Se obtuvieron los productos con exito.', products: products});
@@ -37,7 +58,7 @@ class ProductsService {
 
     getProductById(product_id) {
         return new Observable(subscriber => {
-            ProductsModel.findOne({_id: product_id}).exec((err, product) => {
+            ProductsModel.findOne({_id: product_id, deleted: false}).populate('categories').exec((err, product) => {
                 if (err) subscriber.error(err);
                 subscriber.next({status: 'success', message: 'Se obtuvo el producto con exito.', product: product});
             });
@@ -46,7 +67,7 @@ class ProductsService {
 
     getProductByListOfIds(products_ids) {
         return new Observable(subscriber => {
-            ProductsModel.find({_id: { $in: products_ids }}).exec((err, products) => {
+            ProductsModel.find({deleted: false, _id: { $in: products_ids }}).exec((err, products) => {
                 if (err) subscriber.error(err);
                 if (products != null) {
                     subscriber.next({status: 'success', message: 'Se obtuvieron los productos con exito.', products: products});
@@ -66,7 +87,7 @@ class ProductsService {
                     if (!store.active) {
                         ProductsModel.findOneAndUpdate({ _id: product_id }, { active: active }, {new:true}, (err, product) => {
                             StoresModel.findOneAndUpdate({ _id: store._id }, { active: true }, (err, store) => {
-                                subscriber.next({status: 'success', message: 'Se activo el producto y la tienda ya que estaba desactivada.', product: product});
+                                subscriber.next({status: 'success', message: 'Se activo el producto y el local ya que estaba desactivada.', product: product});
                             });
                         });
                     } else {
@@ -75,7 +96,7 @@ class ProductsService {
                             ProductsModel.countDocuments({store_id: store._id, active: true}, (err, productos_activos) => {
                                 if (productos_activos == 0) {
                                     StoresModel.findOneAndUpdate({ _id: store._id }, { active: false }, (err, store) => {
-                                        subscriber.next({status: 'warning', message: 'Se ha desactivado la tienda por no tener ningun producto activo, vuelve a activar la tienda desde el menu anterior.', product: product});
+                                        subscriber.next({status: 'warning', message: 'Se ha desactivado el local por no tener ningun producto activo, vuelve a activar el local desde el menu anterior.', product: product});
                                     });
                                 } else {
                                     subscriber.next({status: 'success', message: 'Se activo con exito.', product: product});
@@ -90,14 +111,14 @@ class ProductsService {
 
     deleteProductById(product_id) {
         return new Observable(subscriber => {
-            ProductsModel.deleteOne({ _id: product_id }, function (err, product) {
+            ProductsModel.findOneAndUpdate({ _id: product_id}, {deleted: true}, function (err, product) {
                 if (err) subscriber.error(err);
-                // revisamos si la tienda no se quedo sin productos, si ya no tiene mas entonces desactivamos la tienda y avisamos al cliente.
+                // revisamos si el local no se quedo sin productos, si ya no tiene mas entonces desactivamos el local y avisamos al cliente.
                 ProductsModel.countDocuments({store_id: product.store_id}, function (err, products_count) {
                     if (err) subscriber.error(err);
                     if (products_count == 0) {
                         StoresModel.findOneAndUpdate({ _id: product.store_id }, { active: false }, function (err, store) {
-                            subscriber.next({status: 'warning', message: 'Se ha desactivado la tienda por falta de productos, agrega un producto para volver a activar la tienda.', product: product});
+                            subscriber.next({status: 'warning', message: 'Se ha desactivado el local por falta de productos, agrega un producto para volver a activar el local.', product: product});
                         });
                     } else {
                         subscriber.next({status: 'success', message: 'Se elimino con exito.', product: product});
@@ -113,9 +134,10 @@ class ProductsService {
             try {
                 let operation_type = '';
                 if (product._id == '') {
-                    // si es nulo es por que es una nueva tienda.
+                    // si es nulo es por que es un nuevo producto.
                     product._id = mongoose.Types.ObjectId();
                     product.creationDate = moment(new Date());
+                    product.deleted = false;
                     operation_type = 'Save';
                 } else {
                     product.creationDate = moment(product.creationDate);

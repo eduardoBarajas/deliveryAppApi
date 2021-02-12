@@ -14,7 +14,9 @@ const UserSchema = new Schema({
     phone: String,
     verified: Boolean,
     userRole: {type: String, required: true},
-    password: {type: String, required: false, default: null}
+    userRating: {type: Number, required: true, default: 3.0},
+    password: {type: String, required: false, default: null},
+    deleted: Boolean
 });
 
 module.exports = mongoose.model('Users', UserSchema); 
